@@ -32,6 +32,12 @@ export async function getPlaidLinkToken() {
     return { linkToken }
   } catch (error: any) {
     console.error('Error generating link token:', error)
+    const detailedError = error.response?.data
+    if (detailedError) {
+      return {
+        error: `[Plaid Error ${detailedError.error_code}]: ${detailedError.error_message}`
+      }
+    }
     return { error: error.message || 'Failed to create Plaid Link token' }
   }
 }
@@ -186,6 +192,12 @@ export async function exchangePlaidPublicToken(publicToken: string) {
     return { success: true, institutionName }
   } catch (error: any) {
     console.error('Error exchanging public token:', error)
+    const detailedError = error.response?.data
+    if (detailedError) {
+      return {
+        error: `[Plaid Error ${detailedError.error_code}]: ${detailedError.error_message}`
+      }
+    }
     return { error: error.message || 'Failed to complete financial connection' }
   }
 }
