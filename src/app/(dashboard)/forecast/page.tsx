@@ -2,13 +2,7 @@ import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import { generateCashFlowForecast } from '@/lib/forecast/engine'
 import { AlertTriangle, TrendingUp, Info } from 'lucide-react'
-import dynamic from 'next/dynamic'
-
-// Dynamically import Recharts to avoid SSR hydration mismatches
-const ForecastChart = dynamic(
-  () => import('@/components/forecast-chart').then((mod) => mod.ForecastChart),
-  { ssr: false, loading: () => <div className="h-72 w-full bg-gray-900/20 rounded-2xl animate-pulse flex items-center justify-center text-xs text-gray-500">Loading forecast chart...</div> }
-)
+import { ForecastChart } from '@/components/forecast-chart'
 
 export default async function ForecastPage() {
   const supabase = await createClient()

@@ -52,6 +52,11 @@ const CustomTooltip = ({ active, payload }: any) => {
 }
 
 export function ForecastChart({ data }: ForecastChartProps) {
+  const [mounted, setMounted] = React.useState(false)
+  React.useEffect(() => {
+    setMounted(true)
+  }, [])
+
   // Format dates for X-Axis tick display (e.g., Jul 15)
   const formatXAxis = (tickItem: string) => {
     try {
@@ -60,6 +65,14 @@ export function ForecastChart({ data }: ForecastChartProps) {
     } catch {
       return tickItem
     }
+  }
+
+  if (!mounted) {
+    return (
+      <div className="h-72 w-full bg-gray-900/20 rounded-2xl animate-pulse flex items-center justify-center text-xs text-gray-500">
+        Loading forecast chart...
+      </div>
+    )
   }
 
   return (
