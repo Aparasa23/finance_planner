@@ -146,7 +146,7 @@ export function NavigationShell({ children, userEmail, userName }: NavigationShe
           {/* Quick Actions (Notifications trigger) */}
           <div className="flex items-center space-x-2">
             <Link
-              href="/notifications"
+              href="/settings"
               className="relative p-2 rounded-full hover:bg-gray-800/80 text-gray-300 hover:text-gray-100 transition-all border border-transparent hover:border-gray-800"
             >
               <Bell className="h-5 w-5" />

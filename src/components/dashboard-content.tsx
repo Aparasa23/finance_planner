@@ -2,7 +2,7 @@
 
 import React, { useState, useTransition } from 'react'
 import Link from 'next/link'
-import { confirmOccurrencePayment } from '@/app/actions/obligation'
+import { confirmOccurrencePayment, confirmRecurringStream, dismissRecurringStream } from '@/app/actions/obligation'
 import {
   Wallet,
   TrendingUp,
@@ -39,6 +39,7 @@ interface DashboardContentProps {
   cardsWithStatement: any[]
   installmentPlans: any[]
   transactions: any[]
+  unconfirmedStreams: any[]
 }
 
 export function DashboardContent({
@@ -55,6 +56,7 @@ export function DashboardContent({
   cardsWithStatement,
   installmentPlans,
   transactions,
+  unconfirmedStreams,
 }: DashboardContentProps) {
   const [isMounted, setIsMounted] = useState(false)
   const [isConfirming, startConfirmTransition] = useTransition()
@@ -67,6 +69,30 @@ export function DashboardContent({
     if (window.confirm(`Mark "${name}" payment as completed?`)) {
       startConfirmTransition(async () => {
         const res = await confirmOccurrencePayment(occurrenceId)
+        if (res && 'error' in res) {
+          alert(res.error)
+        }
+      })
+    }
+  }
+
+  const handleConfirmStream = async (streamId: string, name: string) => {
+    if (window.confirm(`Add "${name}" as a tracked recurring bill/subscription?`)) {
+      startConfirmTransition(async () => {
+        const res = await confirmRecurringStream(streamId)
+        if (res && 'error' in res) {
+          alert(res.error)
+        } else {
+          alert(`"${name}" successfully added to your bills checklist!`)
+        }
+      })
+    }
+  }
+
+  const handleDismissStream = async (streamId: string) => {
+    if (window.confirm(`Dismiss this recurring payment notification?`)) {
+      startConfirmTransition(async () => {
+        const res = await dismissRecurringStream(streamId)
         if (res && 'error' in res) {
           alert(res.error)
         }
@@ -151,6 +177,48 @@ export function DashboardContent({
           </div>
         </div>
       </div>
+
+      {/* 1b. Gemini Detected Recurring Payments Notification Banner */}
+      {unconfirmedStreams.map((stream: any) => (
+        <div
+          key={stream.id}
+          className="relative overflow-hidden glass-panel p-4 rounded-2xl border border-emerald-500/20 bg-gradient-to-r from-emerald-950/20 via-slate-900/30 to-slate-950 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs"
+        >
+          <div className="flex items-start space-x-3">
+            <div className="p-2.5 rounded-xl bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 mt-0.5">
+              <Sparkles className="h-4 w-4 text-emerald-400" />
+            </div>
+            <div className="space-y-1">
+              <div className="flex items-center space-x-2">
+                <span className="text-[9px] uppercase font-bold text-emerald-400 tracking-wider">Gemini Intelligence</span>
+                <span className="text-[8px] font-semibold bg-emerald-500/15 text-emerald-300 px-1.5 py-0.2 rounded border border-emerald-500/20 uppercase">
+                  New {stream.category} Detected
+                </span>
+              </div>
+              <p className="text-gray-200 font-semibold text-[11px]">
+                We detected a recurring charge to <span className="font-extrabold text-white">"{stream.display_name || stream.merchant_name}"</span> for <span className="text-emerald-400 font-extrabold">${Number(stream.typical_amount).toFixed(2)}</span> ({stream.frequency}).
+              </p>
+              <p className="text-[10px] text-gray-500">
+                Plaid Merchant ID: <span className="font-mono text-gray-450">{stream.merchant_name}</span> (Confidence: {Math.round(stream.confidence_score * 100)}%)
+              </p>
+            </div>
+          </div>
+          <div className="flex items-center space-x-2 sm:self-center shrink-0">
+            <button
+              onClick={() => handleConfirmStream(stream.id, stream.display_name || stream.merchant_name)}
+              className="text-[10px] px-3.5 py-2 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold rounded-lg transition-all cursor-pointer shadow-md shadow-emerald-500/10"
+            >
+              Add Bill
+            </button>
+            <button
+              onClick={() => handleDismissStream(stream.id)}
+              className="text-[10px] px-3 py-2 border border-gray-800 text-gray-450 hover:text-gray-250 hover:bg-gray-900 rounded-lg transition-colors cursor-pointer"
+            >
+              Dismiss
+            </button>
+          </div>
+        </div>
+      ))}
 
       {/* 2. Main Financial Totals Row (4 columns) */}
       <section className="grid grid-cols-1 sm:grid-cols-4 gap-4">

@@ -576,3 +576,122 @@ export async function updateBill(
   }
 }
 
+export async function confirmRecurringStream(streamId: string) {
+  const supabase = await createClient()
+
+  const {
+    data: { user },
+    error: authError,
+  } = await supabase.auth.getUser()
+
+  if (authError || !user) {
+    return { error: 'Unauthorized user session' }
+  }
+
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('household_id')
+    .eq('id', user.id)
+    .single()
+
+  if (!profile?.household_id) {
+    return { error: 'Household onboarding required' }
+  }
+
+  const adminSupabase = createAdminClient()
+
+  try {
+    // 1. Fetch stream details
+    const { data: stream, error: fetchErr } = await adminSupabase
+      .from('recurring_streams')
+      .select('*')
+      .eq('id', streamId)
+      .eq('household_id', profile.household_id)
+      .single()
+
+    if (fetchErr || !stream) {
+      return { error: 'Recurring stream not found' }
+    }
+
+    // 2. Insert into bills
+    const { data: bill, error: billErr } = await adminSupabase
+      .from('bills')
+      .insert({
+        household_id: profile.household_id,
+        name: stream.display_name || stream.merchant_name,
+        category: stream.category,
+        expected_amount: stream.typical_amount,
+        is_fixed: true,
+        frequency: stream.frequency,
+        due_date_day: new Date(stream.expected_next_date).getDate(),
+        autopay: true,
+        start_date: new Date().toISOString().split('T')[0],
+        active: true,
+        recurring_stream_id: stream.id,
+      })
+      .select()
+      .single()
+
+    if (billErr || !bill) throw billErr
+
+    // 3. Create initial upcoming occurrence
+    await adminSupabase
+      .from('bill_occurrences')
+      .insert({
+        bill_id: bill.id,
+        due_date: stream.expected_next_date,
+        expected_amount: stream.typical_amount,
+        status: 'upcoming',
+      })
+
+    // 4. Update stream to user_confirmed = true
+    await adminSupabase
+      .from('recurring_streams')
+      .update({
+        user_confirmed: true,
+        updated_at: new Date().toISOString(),
+      })
+      .eq('id', streamId)
+
+    revalidatePath('/')
+    return { success: true }
+  } catch (err: any) {
+    console.error('Error confirming recurring stream:', err)
+    return { error: err.message || 'Failed to confirm recurring stream' }
+  }
+}
+
+export async function dismissRecurringStream(streamId: string) {
+  const supabase = await createClient()
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
+
+  if (!user) return { error: 'Unauthorized' }
+
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('household_id')
+    .eq('id', user.id)
+    .single()
+
+  if (!profile?.household_id) return { error: 'Household onboarding required' }
+
+  const adminSupabase = createAdminClient()
+
+  try {
+    await adminSupabase
+      .from('recurring_streams')
+      .delete()
+      .eq('id', streamId)
+      .eq('household_id', profile.household_id)
+
+    revalidatePath('/')
+    return { success: true }
+  } catch (err: any) {
+    console.error('Error dismissing recurring stream:', err)
+    return { error: err.message || 'Failed to dismiss stream' }
+  }
+}
+

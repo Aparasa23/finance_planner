@@ -67,6 +67,13 @@ export default async function DashboardPage() {
     .order('date', { ascending: false })
     .limit(5)
 
+  // 6. Fetch unconfirmed recurring streams (flagged by Gemini)
+  const { data: unconfirmedStreams = [] } = await supabase
+    .from('recurring_streams')
+    .select('*')
+    .eq('household_id', householdId)
+    .eq('user_confirmed', false)
+
   // Math aggregates
   const checkingAndSavings = (accounts || [])?.filter(
     (a: any) => a.type === 'depository' && (a.subtype === 'checking' || a.subtype === 'savings')
@@ -152,6 +159,7 @@ export default async function DashboardPage() {
       cardsWithStatement={cardsWithStatement}
       installmentPlans={installmentPlans}
       transactions={transactions}
+      unconfirmedStreams={unconfirmedStreams || []}
     />
   )
 }

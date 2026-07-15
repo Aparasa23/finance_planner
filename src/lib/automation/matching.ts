@@ -254,3 +254,97 @@ export async function checkOverdueBills(householdId: string): Promise<number> {
 
   return count
 }
+
+/**
+ * Analyze an unmatched transaction using Gemini to detect potential subscriptions or bills.
+ */
+export async function checkForPotentialSubscription(transactionId: string): Promise<boolean> {
+  const adminSupabase = createAdminClient()
+
+  // 1. Fetch transaction details
+  const { data: tx } = await adminSupabase
+    .from('transactions')
+    .select('*')
+    .eq('id', transactionId)
+    .single()
+
+  if (!tx || Number(tx.amount) <= 0) return false
+
+  const merchantName = tx.normalized_merchant || tx.description
+  if (!merchantName) return false
+
+  try {
+    // 2. Check if a recurring stream or bill already exists for this merchant in this household
+    const { data: existingBill } = await adminSupabase
+      .from('bills')
+      .select('id')
+      .eq('household_id', tx.household_id)
+      .eq('name', merchantName)
+      .maybeSingle()
+
+    if (existingBill) return false
+
+    const { data: existingStream } = await adminSupabase
+      .from('recurring_streams')
+      .select('id')
+      .eq('household_id', tx.household_id)
+      .eq('merchant_name', merchantName)
+      .maybeSingle()
+
+    if (existingStream) return false
+
+    // 3. Classify with Gemini
+    const { classifyTransactionCategory } = await import('@/lib/assistant/gemini')
+    const classification = await classifyTransactionCategory(merchantName)
+
+    if (classification.isRecurring && classification.confidence >= 0.7) {
+      // 4. Calculate expected next due date
+      const txDate = new Date(tx.date)
+      const expectedNextDate = new Date(txDate)
+      if (classification.frequency === 'monthly') {
+        expectedNextDate.setMonth(expectedNextDate.getMonth() + 1)
+      } else if (classification.frequency === 'annually') {
+        expectedNextDate.setFullYear(expectedNextDate.getFullYear() + 1)
+      } else if (classification.frequency === 'semiannually') {
+        expectedNextDate.setMonth(expectedNextDate.getMonth() + 6)
+      } else {
+        expectedNextDate.setDate(expectedNextDate.getDate() + 14) // default biweekly
+      }
+      const formattedNextDate = expectedNextDate.toISOString().split('T')[0]
+
+      // 5. Insert stream as unconfirmed
+      const { data: stream } = await adminSupabase
+        .from('recurring_streams')
+        .insert({
+          household_id: tx.household_id,
+          merchant_name: merchantName,
+          display_name: classification.suggestedName,
+          category: classification.category,
+          frequency: classification.frequency,
+          typical_amount: Number(tx.amount),
+          expected_next_date: formattedNextDate,
+          user_confirmed: false,
+          confidence_score: classification.confidence,
+        })
+        .select()
+        .single()
+
+      // 6. Push notification
+      if (stream) {
+        await adminSupabase.from('notifications').insert({
+          household_id: tx.household_id,
+          title: 'New Subscription Detected',
+          message: `Gemini detected a new recurring payment to ${classification.suggestedName} ($${Number(tx.amount).toFixed(2)}/mo). Confirm this to track it in your checklist.`,
+          status: 'pending_delivery',
+          notification_type: 'bill_match_review',
+          payload: { stream_id: stream.id, transaction_id: transactionId },
+        })
+        return true
+      }
+    }
+  } catch (err) {
+    console.error('Error in potential subscription check:', err)
+  }
+
+  return false
+}

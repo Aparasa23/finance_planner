@@ -149,10 +149,13 @@ export async function exchangePlaidPublicToken(publicToken: string) {
       const { data: insertedTxs } = await adminSupabase.from('transactions').insert(dbTxList).select()
 
       if (insertedTxs && insertedTxs.length > 0) {
-        const { matchTransactionToBill } = await import('@/lib/automation/matching')
+        const { matchTransactionToBill, checkForPotentialSubscription } = await import('@/lib/automation/matching')
         for (const tx of insertedTxs) {
           try {
-            await matchTransactionToBill(tx.id)
+            const matchRes = await matchTransactionToBill(tx.id)
+            if (matchRes && !matchRes.matched) {
+              await checkForPotentialSubscription(tx.id)
+            }
           } catch (matchErr) {
             console.error('Fuzzy matching failed for transaction:', tx.id, matchErr)
           }
@@ -365,10 +368,13 @@ export async function syncConnectionData(connectionId: string) {
       const { data: insertedTxs } = await adminSupabase.from('transactions').insert(dbTxList).select()
 
       if (insertedTxs && insertedTxs.length > 0) {
-        const { matchTransactionToBill } = await import('@/lib/automation/matching')
+        const { matchTransactionToBill, checkForPotentialSubscription } = await import('@/lib/automation/matching')
         for (const tx of insertedTxs) {
           try {
-            await matchTransactionToBill(tx.id)
+            const matchRes = await matchTransactionToBill(tx.id)
+            if (matchRes && !matchRes.matched) {
+              await checkForPotentialSubscription(tx.id)
+            }
           } catch (matchErr) {
             console.error('Fuzzy matching failed for transaction:', tx.id, matchErr)
           }

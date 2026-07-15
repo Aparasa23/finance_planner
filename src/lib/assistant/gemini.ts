@@ -188,3 +188,72 @@ Let me know if you'd like to simulate other queries!`,
     }
   }
 }
+
+export async function classifyTransactionCategory(merchantName: string): Promise<{
+  isRecurring: boolean
+  category: 'Utilities' | 'Subscriptions' | 'Home Security' | 'Membership' | 'Housing' | 'Transportation' | 'Financing' | 'Other'
+  suggestedName: string
+  frequency: 'weekly' | 'biweekly' | 'monthly' | 'quarterly' | 'semiannually' | 'annually' | 'irregular'
+  confidence: number
+}> {
+  const apiKey = process.env.GEMINI_API_KEY
+  if (!apiKey || apiKey === 'your-gemini-api-key') {
+    return {
+      isRecurring: false,
+      category: 'Other',
+      suggestedName: merchantName,
+      frequency: 'monthly',
+      confidence: 0.0,
+    }
+  }
+
+  try {
+    const genAI = new GoogleGenerativeAI(apiKey)
+    // Use the fast, low-cost flash model
+    const model = genAI.getGenerativeModel({
+      model: 'gemini-1.5-flash',
+      generationConfig: {
+        responseMimeType: 'application/json',
+      },
+    })
+
+    const prompt = `Analyze the raw bank transaction merchant name: "${merchantName}".
+Determine:
+1. Is this transaction a recurring charge (e.g. utility, subscription, membership, loan, mortgage, rent, or insurance)?
+2. Which category fits best? Select from: 'Utilities', 'Subscriptions', 'Home Security', 'Membership', 'Housing', 'Transportation', 'Financing', or 'Other'.
+3. What is a clean, human-readable name for this bill? (e.g., "Netflix" instead of "NETFLIX_MEMBER_1234", or "Comcast" instead of "XFINITY_COMCAST_PAY").
+4. What is the expected frequency? Select from: 'weekly', 'biweekly', 'monthly', 'quarterly', 'semiannually', 'annually', or 'irregular'.
+5. What is your confidence score (0.0 to 1.0) on this classification?
+
+Return ONLY a JSON object:
+{
+  "isRecurring": boolean,
+  "category": "Utilities" | "Subscriptions" | "Home Security" | "Membership" | "Housing" | "Transportation" | "Financing" | "Other",
+  "suggestedName": string,
+  "frequency": "weekly" | "biweekly" | "monthly" | "quarterly" | "semiannually" | "annually" | "irregular",
+  "confidence": number
+}`
+
+    const response = await model.generateContent(prompt)
+    const text = response.response.text()
+    if (!text) throw new Error('Empty model response')
+
+    const parsed = JSON.parse(text)
+    return {
+      isRecurring: !!parsed.isRecurring,
+      category: parsed.category || 'Other',
+      suggestedName: parsed.suggestedName || merchantName,
+      frequency: parsed.frequency || 'monthly',
+      confidence: parsed.confidence || 0.0,
+    }
+  } catch (err) {
+    console.error('Error in transaction classification via Gemini:', err)
+    return {
+      isRecurring: false,
+      category: 'Other',
+      suggestedName: merchantName,
+      frequency: 'monthly',
+      confidence: 0.0,
+    }
+  }
+}
