@@ -6,7 +6,7 @@ import {
   getHouseholdSavingsGoals
 } from './tools'
 
-const MODEL_NAME = 'gemini-3.5-flash'
+const MODEL_NAME = 'gemini-flash-latest'
 
 // System instructions to shape assistant behavior
 const SYSTEM_INSTRUCTION = `You are the Finance OS Assistant, a secure, intelligent, household personal finance adviser.
@@ -211,7 +211,7 @@ export async function classifyTransactionCategory(merchantName: string): Promise
     const genAI = new GoogleGenerativeAI(apiKey)
     // Use the fast, low-cost flash model
     const model = genAI.getGenerativeModel({
-      model: 'gemini-3.5-flash',
+      model: 'gemini-flash-latest',
       generationConfig: {
         responseMimeType: 'application/json',
       },
