@@ -32,18 +32,50 @@ export class PlaidProvider implements FinancialProvider {
   }
 
   async createLinkToken(userId: string, householdId: string): Promise<string> {
-    const response = await this.plaidClient.linkTokenCreate({
-      user: {
-        client_user_id: userId,
-      },
-      client_name: 'Finance OS',
-      products: (process.env.PLAID_PRODUCTS?.split(',') || ['auth', 'transactions', 'liabilities']) as Products[],
-      country_codes: (process.env.PLAID_COUNTRY_CODES?.split(',') || ['US']) as CountryCode[],
-      language: 'en',
-      webhook: `${process.env.NEXT_PUBLIC_APP_URL}/api/webhooks/plaid`,
-    })
+    const products = (process.env.PLAID_PRODUCTS?.split(',') || ['auth', 'transactions', 'liabilities']) as Products[]
+    const webhookUrl = process.env.NEXT_PUBLIC_APP_URL && process.env.NEXT_PUBLIC_APP_URL.startsWith('http')
+      ? `${process.env.NEXT_PUBLIC_APP_URL}/api/webhooks/plaid`
+      : undefined
 
-    return response.data.link_token
+    try {
+      const response = await this.plaidClient.linkTokenCreate({
+        user: {
+          client_user_id: userId,
+        },
+        client_name: 'Finance OS',
+        products,
+        country_codes: (process.env.PLAID_COUNTRY_CODES?.split(',') || ['US']) as CountryCode[],
+        language: 'en',
+        ...(webhookUrl ? { webhook: webhookUrl } : {}),
+      })
+      return response.data.link_token
+    } catch (error: any) {
+      console.error('Failed to create link token with products:', products, error.response?.data || error.message)
+      
+      // Fallback: If liabilities failed (e.g., product access not approved on your Plaid team), retry with auth & transactions
+      if (products.includes(Products.Liabilities)) {
+        console.log('Retrying Link token creation without liabilities product...')
+        const fallbackProducts = products.filter((p) => p !== Products.Liabilities)
+        
+        try {
+          const response = await this.plaidClient.linkTokenCreate({
+            user: {
+              client_user_id: userId,
+            },
+            client_name: 'Finance OS',
+            products: fallbackProducts,
+            country_codes: (process.env.PLAID_COUNTRY_CODES?.split(',') || ['US']) as CountryCode[],
+            language: 'en',
+            ...(webhookUrl ? { webhook: webhookUrl } : {}),
+          })
+          return response.data.link_token
+        } catch (fallbackError: any) {
+          console.error('Fallback Link token creation also failed:', fallbackError.response?.data || fallbackError.message)
+          throw fallbackError;
+        }
+      }
+      throw error
+    }
   }
 
   async exchangePublicToken(publicToken: string): Promise<{
