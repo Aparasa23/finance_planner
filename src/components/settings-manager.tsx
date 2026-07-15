@@ -3,17 +3,80 @@
 import React, { useState } from 'react'
 import { updateNotificationPreferences } from '@/app/actions/notification'
 import { createInvite, joinHousehold } from '@/app/actions/household'
+import { updateBill } from '@/app/actions/obligation'
 import { PushSubscriptionToggle } from './push-subscription-toggle'
-import { Users, Shield, Copy, RefreshCw, Key, Bell, Loader2, Home } from 'lucide-react'
+import { Users, Shield, Copy, RefreshCw, Key, Bell, Loader2, Home, Edit2, Sliders } from 'lucide-react'
 
 interface SettingsManagerProps {
   profile: any
   household: any
   members: any[]
+  initialBills: any[]
 }
 
-export function SettingsManager({ profile, household, members }: SettingsManagerProps) {
+export function SettingsManager({ profile, household, members, initialBills }: SettingsManagerProps) {
   const [loading, setLoading] = useState<string | null>(null)
+  
+  // Bills editing state
+  const [bills, setBills] = useState<any[]>(initialBills)
+  const [editingBill, setEditingBill] = useState<any | null>(null)
+  const [editName, setEditName] = useState('')
+  const [editCategory, setEditCategory] = useState('')
+  const [editAmount, setEditAmount] = useState('')
+  const [editFrequency, setEditFrequency] = useState('')
+  const [editDay, setEditDay] = useState('')
+  const [editAutopay, setEditAutopay] = useState(false)
+  const [editActive, setEditActive] = useState(true)
+
+  const handleStartEdit = (bill: any) => {
+    setEditingBill(bill)
+    setEditName(bill.name)
+    setEditCategory(bill.category)
+    setEditAmount(String(bill.expected_amount))
+    setEditFrequency(bill.frequency)
+    setEditDay(String(bill.due_date_day || ''))
+    setEditAutopay(bill.autopay)
+    setEditActive(bill.active)
+  }
+
+  const handleSaveBill = async () => {
+    if (!editingBill) return
+    setLoading('save_bill')
+
+    const result = await updateBill(editingBill.id, {
+      name: editName,
+      category: editCategory,
+      expectedAmount: Number(editAmount),
+      frequency: editFrequency,
+      dueDateDay: Number(editDay) || 1,
+      autopay: editAutopay,
+      active: editActive,
+    })
+
+    setLoading(null)
+    if (result && result.success) {
+      setBills((prev) =>
+        prev.map((b) =>
+          b.id === editingBill.id
+            ? {
+                ...b,
+                name: editName,
+                category: editCategory,
+                expected_amount: Number(editAmount),
+                frequency: editFrequency,
+                due_date_day: Number(editDay) || null,
+                autopay: editAutopay,
+                active: editActive,
+              }
+            : b
+        )
+      )
+      setEditingBill(null)
+      alert('Bill updated successfully!')
+    } else if (result && 'error' in result) {
+      alert(result.error)
+    }
+  }
   
   // Notification form states
   const prefs = profile.notification_preferences || {
@@ -225,6 +288,154 @@ export function SettingsManager({ profile, household, members }: SettingsManager
             </button>
 
           </form>
+        </div>
+
+        {/* Manage Bills & Subscriptions Checklist */}
+        <div className="glass-panel p-5 rounded-2xl space-y-4">
+          <h2 className="text-sm font-bold text-gray-100 flex items-center">
+            <Sliders className="h-4.5 w-4.5 text-emerald-400 mr-2" /> Manage Bills & Subscriptions
+          </h2>
+          <p className="text-[10px] text-gray-500">
+            Select any recurring bill to edit its expected amount, change billing frequency (e.g. monthly to semiannually), or enable/disable AutoPay.
+          </p>
+
+          <div className="space-y-2 max-h-[350px] overflow-y-auto custom-scrollbar pr-1">
+            {bills.map((bill) => (
+              <div
+                key={bill.id}
+                className="flex justify-between items-center bg-gray-950/20 border border-gray-900 p-2.5 rounded-xl hover:border-gray-800 transition-colors"
+              >
+                <div>
+                  <p className="text-xs font-bold text-gray-200">{bill.name}</p>
+                  <p className="text-[9px] text-gray-500 capitalize">
+                    {bill.category} • {bill.frequency} {bill.due_date_day && `(Day ${bill.due_date_day})`} • {bill.autopay ? 'AutoPay' : 'Manual'}
+                  </p>
+                </div>
+                <div className="flex items-center space-x-3">
+                  <p className="text-xs font-extrabold text-gray-300">
+                    ${Number(bill.expected_amount).toFixed(2)}
+                  </p>
+                  <button
+                    onClick={() => handleStartEdit(bill)}
+                    className="p-1 text-emerald-400 hover:text-emerald-300 hover:bg-emerald-500/10 rounded-lg border border-emerald-500/20 transition-all cursor-pointer"
+                    title="Edit Bill"
+                  >
+                    <Edit2 className="h-3.5 w-3.5" />
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {/* Inline Edit Form */}
+          {editingBill && (
+            <div className="p-4 bg-slate-950/80 border border-emerald-500/20 rounded-xl space-y-4 animate-fadeIn">
+              <div className="flex items-center justify-between border-b border-gray-900 pb-2">
+                <p className="text-xs font-bold text-emerald-400">Edit: {editingBill.name}</p>
+                <button
+                  type="button"
+                  onClick={() => setEditingBill(null)}
+                  className="text-[10px] text-gray-500 hover:text-gray-300 uppercase font-semibold"
+                >
+                  Cancel
+                </button>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3 text-xs">
+                <div className="space-y-1 col-span-2">
+                  <label className="text-[9px] font-bold text-gray-500 uppercase tracking-wider block">Bill Name</label>
+                  <input
+                    type="text"
+                    value={editName}
+                    onChange={(e) => setEditName(e.target.value)}
+                    className="bg-slate-900 border border-gray-800 rounded-lg px-2.5 py-1.5 text-xs text-gray-200 w-full focus:outline-none focus:border-emerald-500"
+                  />
+                </div>
+                <div className="space-y-1">
+                  <label className="text-[9px] font-bold text-gray-500 uppercase tracking-wider block">Category</label>
+                  <select
+                    value={editCategory}
+                    onChange={(e) => setEditCategory(e.target.value)}
+                    className="bg-slate-900 border border-gray-800 rounded-lg px-2.5 py-1.5 text-xs text-gray-250 w-full focus:outline-none focus:border-emerald-500"
+                  >
+                    <option value="Utilities">Utilities</option>
+                    <option value="Subscriptions">Subscriptions</option>
+                    <option value="Home Security">Home Security</option>
+                    <option value="Membership">Membership</option>
+                    <option value="Housing">Housing</option>
+                    <option value="Transportation">Transportation</option>
+                    <option value="Financing">Financing</option>
+                  </select>
+                </div>
+                <div className="space-y-1">
+                  <label className="text-[9px] font-bold text-gray-500 uppercase tracking-wider block">Expected Amount ($)</label>
+                  <input
+                    type="number"
+                    step="0.01"
+                    value={editAmount}
+                    onChange={(e) => setEditAmount(e.target.value)}
+                    className="bg-slate-900 border border-gray-800 rounded-lg px-2.5 py-1.5 text-xs text-gray-200 w-full focus:outline-none focus:border-emerald-500"
+                  />
+                </div>
+                <div className="space-y-1">
+                  <label className="text-[9px] font-bold text-gray-500 uppercase tracking-wider block">Billing Frequency</label>
+                  <select
+                    value={editFrequency}
+                    onChange={(e) => setEditFrequency(e.target.value)}
+                    className="bg-slate-900 border border-gray-800 rounded-lg px-2.5 py-1.5 text-xs text-gray-250 w-full focus:outline-none focus:border-emerald-500"
+                  >
+                    <option value="weekly">Weekly</option>
+                    <option value="biweekly">Bi-weekly</option>
+                    <option value="monthly">Monthly</option>
+                    <option value="quarterly">Quarterly</option>
+                    <option value="semiannually">Semiannually</option>
+                    <option value="annually">Annually</option>
+                  </select>
+                </div>
+                <div className="space-y-1">
+                  <label className="text-[9px] font-bold text-gray-500 uppercase tracking-wider block">Due Date Day (1-31)</label>
+                  <input
+                    type="number"
+                    min="1"
+                    max="31"
+                    value={editDay}
+                    onChange={(e) => setEditDay(e.target.value)}
+                    className="bg-slate-900 border border-gray-800 rounded-lg px-2.5 py-1.5 text-xs text-gray-200 w-full focus:outline-none focus:border-emerald-500"
+                  />
+                </div>
+                <div className="flex items-center space-x-2 pt-4">
+                  <input
+                    type="checkbox"
+                    id="editAutopay"
+                    checked={editAutopay}
+                    onChange={(e) => setEditAutopay(e.target.checked)}
+                    className="rounded border-gray-800 bg-slate-900 text-emerald-500 focus:ring-emerald-500 h-4 w-4"
+                  />
+                  <label htmlFor="editAutopay" className="text-[10px] font-semibold text-gray-300 select-none cursor-pointer">
+                    Enable AutoPay
+                  </label>
+                </div>
+              </div>
+
+              <div className="flex justify-end space-x-2 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setEditingBill(null)}
+                  className="px-3 py-1.5 border border-gray-800 text-gray-400 hover:text-gray-200 hover:bg-gray-900 rounded-lg text-xs transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  onClick={handleSaveBill}
+                  disabled={loading === 'save_bill'}
+                  className="px-4 py-1.5 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold rounded-lg text-xs transition-colors flex items-center space-x-1"
+                >
+                  {loading === 'save_bill' ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : 'Save Changes'}
+                </button>
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Household members list */}

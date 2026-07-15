@@ -504,3 +504,75 @@ export async function confirmOccurrencePayment(occurrenceId: string) {
   }
 }
 
+export async function updateBill(
+  billId: string,
+  data: {
+    name: string
+    category: string
+    expectedAmount: number
+    frequency: string
+    dueDateDay: number
+    autopay: boolean
+    active: boolean
+  }
+) {
+  const supabase = await createClient()
+
+  const {
+    data: { user },
+    error: authError,
+  } = await supabase.auth.getUser()
+
+  if (authError || !user) {
+    return { error: 'Unauthorized user session' }
+  }
+
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('household_id')
+    .eq('id', user.id)
+    .single()
+
+  if (!profile?.household_id) {
+    return { error: 'Household onboarding required' }
+  }
+
+  const adminSupabase = createAdminClient()
+
+  try {
+    // 1. Update bill details
+    const { error: billErr } = await adminSupabase
+      .from('bills')
+      .update({
+        name: data.name,
+        category: data.category,
+        expected_amount: data.expectedAmount,
+        frequency: data.frequency,
+        due_date_day: data.dueDateDay,
+        autopay: data.autopay,
+        active: data.active,
+        updated_at: new Date().toISOString(),
+      })
+      .eq('id', billId)
+      .eq('household_id', profile.household_id)
+
+    if (billErr) throw billErr
+
+    // 2. Cascade expected amount updates to future 'upcoming' occurrences
+    await adminSupabase
+      .from('bill_occurrences')
+      .update({
+        expected_amount: data.expectedAmount,
+        updated_at: new Date().toISOString(),
+      })
+      .eq('bill_id', billId)
+      .eq('status', 'upcoming')
+
+    revalidatePath('/')
+    return { success: true }
+  } catch (err: any) {
+    console.error('Error updating bill:', err)
+    return { error: err.message || 'Failed to update bill configuration' }
+  }
+}
+

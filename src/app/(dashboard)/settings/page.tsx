@@ -30,6 +30,13 @@ export default async function SettingsPage() {
     .select('name, email, role')
     .eq('household_id', profile.household_id)
 
+  // Get list of all registered bills
+  const { data: bills = [] } = await supabase
+    .from('bills')
+    .select('*')
+    .eq('household_id', profile.household_id)
+    .order('name', { ascending: true })
+
   const household = profile.household as any
 
   return (
@@ -44,6 +51,7 @@ export default async function SettingsPage() {
         profile={profile}
         household={household || { name: 'Household', invite_code: 'MOCKCODE' }}
         members={members || []}
+        initialBills={bills || []}
       />
     </div>
   )
