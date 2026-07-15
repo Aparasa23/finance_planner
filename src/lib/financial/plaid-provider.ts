@@ -32,7 +32,7 @@ export class PlaidProvider implements FinancialProvider {
   }
 
   async createLinkToken(userId: string, householdId: string): Promise<string> {
-    const products = (process.env.PLAID_PRODUCTS?.split(',') || ['auth', 'transactions', 'liabilities']) as Products[]
+    const products = (process.env.PLAID_PRODUCTS?.split(',').map((p) => p.trim()) || ['auth', 'transactions', 'liabilities']) as Products[]
     const webhookUrl = process.env.NEXT_PUBLIC_APP_URL && process.env.NEXT_PUBLIC_APP_URL.startsWith('http')
       ? `${process.env.NEXT_PUBLIC_APP_URL}/api/webhooks/plaid`
       : undefined
@@ -44,7 +44,7 @@ export class PlaidProvider implements FinancialProvider {
         },
         client_name: 'Finance OS',
         products,
-        country_codes: (process.env.PLAID_COUNTRY_CODES?.split(',') || ['US']) as CountryCode[],
+        country_codes: (process.env.PLAID_COUNTRY_CODES?.split(',').map((c) => c.trim()) || ['US']) as CountryCode[],
         language: 'en',
         ...(webhookUrl ? { webhook: webhookUrl } : {}),
       })
@@ -53,9 +53,10 @@ export class PlaidProvider implements FinancialProvider {
       console.error('Failed to create link token with products:', products, error.response?.data || error.message)
       
       // Fallback: If liabilities failed (e.g., product access not approved on your Plaid team), retry with auth & transactions
-      if (products.includes(Products.Liabilities)) {
+      const hasLiabilities = products.some((p) => p.toLowerCase() === 'liabilities')
+      if (hasLiabilities) {
         console.log('Retrying Link token creation without liabilities product...')
-        const fallbackProducts = products.filter((p) => p !== Products.Liabilities)
+        const fallbackProducts = products.filter((p) => p.toLowerCase() !== 'liabilities')
         
         try {
           const response = await this.plaidClient.linkTokenCreate({
