@@ -228,7 +228,7 @@ export async function deleteConnection(connectionId: string) {
   }
 
   const adminSupabase = createAdminClient()
-  
+
   try {
     const { data: conn } = await adminSupabase
       .from('financial_connections')
@@ -309,7 +309,7 @@ export async function syncConnectionData(connectionId: string) {
 
     for (const acc of providerAccounts) {
       const matched = dbAccounts?.find((da: any) => da.name === acc.name && da.mask === acc.mask)
-      
+
       let accountId = matched?.id
       if (matched) {
         await adminSupabase
@@ -337,7 +337,7 @@ export async function syncConnectionData(connectionId: string) {
           })
           .select()
           .single()
-        
+
         accountId = newAcc?.id
       }
 
