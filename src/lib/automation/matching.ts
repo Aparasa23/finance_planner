@@ -59,6 +59,31 @@ export async function matchTransactionToBill(transactionId: string): Promise<{ m
   const txDate = new Date(tx.date)
   const txMerchant = tx.normalized_merchant || tx.description || ''
 
+  // Special Rule: Auto-detect Apple Card bill payments from checking to reduce Apple Card manual balance
+  const merchantLower = txMerchant.toLowerCase()
+  if (
+    (merchantLower.includes('apple card') && (merchantLower.includes('pmt') || merchantLower.includes('payment') || merchantLower.includes('bill'))) ||
+    (merchantLower.includes('goldman sachs') && merchantLower.includes('apple'))
+  ) {
+    const { data: appleAccount } = await adminSupabase
+      .from('financial_accounts')
+      .select('id, current_balance')
+      .eq('household_id', tx.household_id)
+      .eq('name', 'Apple Card')
+      .single()
+
+    if (appleAccount) {
+      const currentBal = appleAccount.current_balance || 0
+      const newBal = Math.max(0, currentBal - txAmount)
+      await adminSupabase
+        .from('financial_accounts')
+        .update({ current_balance: newBal })
+        .eq('id', appleAccount.id)
+      
+      console.log(`Auto-detected Apple Card payment of $${txAmount}. Reduced Apple Card balance from $${currentBal} to $${newBal}.`)
+    }
+  }
+
   // 2. Fetch upcoming, due, or overdue occurrences within a +/- 7-day window
   const startDate = new Date(txDate.getTime() - 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
   const endDate = new Date(txDate.getTime() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
