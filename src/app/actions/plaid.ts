@@ -379,6 +379,14 @@ export async function syncConnectionData(connectionId: string) {
             console.error('Fuzzy matching failed for transaction:', tx.id, matchErr)
           }
         }
+
+        // Auto-predict and update bill due dates based on transaction history patterns
+        try {
+          const { autoUpdateBillDueDates } = await import('@/lib/automation/predictor')
+          await autoUpdateBillDueDates(profile.household_id)
+        } catch (predErr) {
+          console.error('Failed to run due date auto-predictor:', predErr)
+        }
       }
     }
 
