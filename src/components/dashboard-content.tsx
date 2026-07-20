@@ -153,27 +153,69 @@ export function DashboardContent({
     return freq || 'Monthly'
   }
 
+  // Calculate Bill Checklist progress metrics
+  const totalBills = upcomingBills.length + paidBills.length + reviewBills.length
+  const completedBills = paidBills.length
+  const completionPct = totalBills > 0 ? Math.round((completedBills / totalBills) * 100) : 0
+
+  // Circular gauge values
+  const radius = 24
+  const circumference = 2 * Math.PI * radius
+  const strokeDashoffset = circumference - (completionPct / 100) * circumference
+
   return (
-    <div className="space-y-4 text-gray-200 relative pb-16">
+    <div className="space-y-5 text-gray-200 relative pb-16">
       
-      {/* 1. Global KPI Health Standing Banner */}
-      <div className="glass-panel p-3.5 rounded-2xl border border-gray-800 bg-gradient-to-r from-gray-950/40 to-slate-900/10 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
-        <div className="space-y-0.5">
-          <div className="flex items-center space-x-2">
-            <span className="text-[9px] uppercase font-bold text-gray-500 tracking-wider">Household Financial Status</span>
-            <span className={`text-[9px] font-extrabold uppercase px-1.5 py-0.2 rounded bg-gray-900 border border-gray-800 ${healthColor}`}>
+      {/* 1. Global KPI Health Standing Banner + Fitbit circular ring */}
+      <div className="glass-panel p-4 rounded-3xl border border-white/5 bg-gradient-to-br from-slate-950/60 via-slate-950/30 to-slate-900/10 flex flex-col md:flex-row items-stretch md:items-center justify-between gap-4 shadow-2xl backdrop-blur-md">
+        <div className="space-y-1.5 flex-1">
+          <div className="flex items-center space-x-2.5">
+            <span className="text-[9px] uppercase font-bold text-gray-500 tracking-wider">Financial Standing Health</span>
+            <span className={`text-[9px] font-black uppercase px-2 py-0.5 rounded-lg bg-gray-900/80 border border-gray-800/80 ${healthColor}`}>
               {healthStatus}
             </span>
           </div>
-          <p className="text-gray-300 font-semibold leading-relaxed text-[11px]">{healthDesc}</p>
-        </div>
-        <div className="flex items-center space-x-2 shrink-0">
-          <div className="text-right">
-            <p className="text-[9px] text-gray-500 uppercase font-bold">Plaid Link</p>
-            <p className="text-[10px] font-bold text-gray-300">2 Accounts Synchronized</p>
+          <p className="text-gray-300 font-semibold leading-relaxed text-xs md:text-sm">{healthDesc}</p>
+          <div className="flex items-center space-x-2 text-[10px] text-gray-500">
+            <ShieldCheck className="h-4 w-4 text-emerald-400" />
+            <span>Plaid Integration Active • 2 Live Accounts Synchronized</span>
           </div>
-          <div className="p-2 rounded-xl bg-emerald-500/10 text-emerald-400 border border-emerald-500/10">
-            <ShieldCheck className="h-4 w-4" />
+        </div>
+
+        {/* Fitbit Circular Ring Progress widget */}
+        <div className="flex items-center space-x-3.5 bg-gray-950/50 p-3 rounded-2xl border border-gray-900/60 shadow-[inset_0_0_15px_rgba(52,211,153,0.03)] shrink-0 self-start md:self-center">
+          <div className="relative flex items-center justify-center h-14 w-14">
+            <svg className="w-full h-full transform -rotate-90">
+              {/* Radial background track */}
+              <circle
+                className="text-gray-850"
+                strokeWidth="4"
+                stroke="currentColor"
+                fill="transparent"
+                r={radius}
+                cx="28"
+                cy="28"
+              />
+              {/* Radial glowing progress ring */}
+              <circle
+                className="text-emerald-400 drop-shadow-[0_0_8px_rgba(52,211,153,0.45)] transition-all duration-1000 ease-out"
+                strokeWidth="4"
+                strokeDasharray={circumference}
+                strokeDashoffset={strokeDashoffset}
+                strokeLinecap="round"
+                stroke="currentColor"
+                fill="transparent"
+                r={radius}
+                cx="28"
+                cy="28"
+              />
+            </svg>
+            <span className="absolute text-[10px] font-black text-white">{completionPct}%</span>
+          </div>
+          <div className="text-left space-y-0.5">
+            <p className="text-[9px] text-gray-500 uppercase font-black tracking-wider leading-none">Bill Completion</p>
+            <p className="text-[12px] font-black text-emerald-400 leading-tight">{completedBills} of {totalBills}</p>
+            <span className="text-[8px] text-gray-400 block leading-none">Checklist Items Paid</span>
           </div>
         </div>
       </div>
@@ -182,16 +224,16 @@ export function DashboardContent({
       {unconfirmedStreams.map((stream: any) => (
         <div
           key={stream.id}
-          className="relative overflow-hidden glass-panel p-4 rounded-2xl border border-emerald-500/20 bg-gradient-to-r from-emerald-950/20 via-slate-900/30 to-slate-950 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs"
+          className="relative overflow-hidden glass-panel p-4 rounded-2xl border border-emerald-500/25 bg-gradient-to-r from-emerald-950/20 via-slate-900/20 to-slate-950 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs shadow-lg backdrop-blur-sm"
         >
           <div className="flex items-start space-x-3">
-            <div className="p-2.5 rounded-xl bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 mt-0.5">
+            <div className="p-2.5 rounded-xl bg-emerald-500/10 text-emerald-400 border border-emerald-500/25 mt-0.5 animate-pulse">
               <Sparkles className="h-4 w-4 text-emerald-400" />
             </div>
             <div className="space-y-1">
               <div className="flex items-center space-x-2">
-                <span className="text-[9px] uppercase font-bold text-emerald-400 tracking-wider">Gemini Intelligence</span>
-                <span className="text-[8px] font-semibold bg-emerald-500/15 text-emerald-300 px-1.5 py-0.2 rounded border border-emerald-500/20 uppercase">
+                <span className="text-[9px] uppercase font-bold text-emerald-450 tracking-wider">Gemini Auditing Intelligence</span>
+                <span className="text-[8px] font-semibold bg-emerald-500/15 text-emerald-300 px-1.5 py-0.2 rounded border border-emerald-500/25 uppercase">
                   New {stream.category} Detected
                 </span>
               </div>
@@ -206,13 +248,13 @@ export function DashboardContent({
           <div className="flex items-center space-x-2 sm:self-center shrink-0">
             <button
               onClick={() => handleConfirmStream(stream.id, stream.display_name || stream.merchant_name)}
-              className="text-[10px] px-3.5 py-2 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold rounded-lg transition-all cursor-pointer shadow-md shadow-emerald-500/10"
+              className="text-[10px] px-3.5 py-2 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-extrabold rounded-lg transition-all cursor-pointer shadow-md shadow-emerald-500/10"
             >
               Add Bill
             </button>
             <button
               onClick={() => handleDismissStream(stream.id)}
-              className="text-[10px] px-3 py-2 border border-gray-800 text-gray-450 hover:text-gray-250 hover:bg-gray-900 rounded-lg transition-colors cursor-pointer"
+              className="text-[10px] px-3 py-2 border border-gray-800 text-gray-400 hover:text-gray-200 hover:bg-gray-900 rounded-lg transition-colors cursor-pointer"
             >
               Dismiss
             </button>
@@ -220,61 +262,69 @@ export function DashboardContent({
         </div>
       ))}
 
-      {/* 2. Main Financial Totals Row (4 columns) */}
+      {/* 2. Main Financial Totals Row - Fitbit-style neon border glowing tiles */}
       <section className="grid grid-cols-1 sm:grid-cols-4 gap-4">
-        {/* Cash */}
-        <div className="glass-panel p-3.5 rounded-2xl flex flex-col justify-between space-y-2 bg-slate-950/10 border-gray-900">
+        {/* Cash Reserves */}
+        <div className="group relative overflow-hidden glass-panel p-4 rounded-2xl flex flex-col justify-between space-y-3 bg-gradient-to-br from-slate-950/40 via-slate-950/20 to-slate-900/10 border-l-4 border-l-emerald-500 border-gray-900/80 hover:border-gray-800 transition-all duration-300 hover:translate-y-[-2px] hover:shadow-[0_4px_25px_rgba(16,185,129,0.06)]">
           <div className="flex items-center justify-between">
-            <span className="text-[10px] text-gray-400 font-bold uppercase tracking-wider">Cash Reserves</span>
-            <Wallet className="h-4.5 w-4.5 text-emerald-400" />
+            <span className="text-[9px] text-gray-400 font-extrabold uppercase tracking-wider">Cash Reserves</span>
+            <div className="p-1.5 rounded-lg bg-emerald-500/10 text-emerald-400 border border-emerald-500/15 group-hover:bg-emerald-500/20 group-hover:text-emerald-300 transition-colors">
+              <Wallet className="h-4.5 w-4.5" />
+            </div>
           </div>
           <div>
-            <h3 className="text-lg font-bold tracking-tight text-emerald-400">
+            <h3 className="text-xl font-black tracking-tight text-emerald-400 drop-shadow-[0_0_8px_rgba(52,211,153,0.15)]">
               ${currentCash.toLocaleString('en-US', { minimumFractionDigits: 2 })}
             </h3>
-            <p className="text-[8px] text-gray-550">Checking: Chase & BofA</p>
+            <p className="text-[8px] text-gray-500 font-medium">Checking: Chase & BofA</p>
           </div>
         </div>
 
         {/* Card Liabilities */}
-        <div className="glass-panel p-3.5 rounded-2xl flex flex-col justify-between space-y-2 bg-slate-950/10 border-gray-900">
+        <div className="group relative overflow-hidden glass-panel p-4 rounded-2xl flex flex-col justify-between space-y-3 bg-gradient-to-br from-slate-950/40 via-slate-950/20 to-slate-900/10 border-l-4 border-l-rose-500 border-gray-900/80 hover:border-gray-800 transition-all duration-300 hover:translate-y-[-2px] hover:shadow-[0_4px_25px_rgba(244,63,94,0.06)]">
           <div className="flex items-center justify-between">
-            <span className="text-[10px] text-gray-400 font-bold uppercase tracking-wider">Card Balances</span>
-            <CreditCard className="h-4.5 w-4.5 text-rose-400" />
+            <span className="text-[9px] text-gray-400 font-extrabold uppercase tracking-wider">Card Balances</span>
+            <div className="p-1.5 rounded-lg bg-rose-500/10 text-rose-450 border border-rose-500/15 group-hover:bg-rose-500/20 group-hover:text-rose-400 transition-colors">
+              <CreditCard className="h-4.5 w-4.5" />
+            </div>
           </div>
           <div>
-            <h3 className="text-lg font-bold tracking-tight text-rose-400">
+            <h3 className="text-xl font-black tracking-tight text-rose-450 drop-shadow-[0_0_8px_rgba(244,63,94,0.15)]">
               ${creditBalance.toLocaleString('en-US', { minimumFractionDigits: 2 })}
             </h3>
-            <p className="text-[8px] text-gray-550">Apple, Venture X, Amex, Discover</p>
+            <p className="text-[8px] text-gray-550 font-medium">Apple, Venture X, Amex, Discover</p>
           </div>
         </div>
 
         {/* Loan Liabilities */}
-        <div className="glass-panel p-3.5 rounded-2xl flex flex-col justify-between space-y-2 bg-slate-950/10 border-gray-900">
+        <div className="group relative overflow-hidden glass-panel p-4 rounded-2xl flex flex-col justify-between space-y-3 bg-gradient-to-br from-slate-950/40 via-slate-950/20 to-slate-900/10 border-l-4 border-l-amber-500 border-gray-900/80 hover:border-gray-800 transition-all duration-300 hover:translate-y-[-2px] hover:shadow-[0_4px_25px_rgba(245,158,11,0.06)]">
           <div className="flex items-center justify-between">
-            <span className="text-[10px] text-gray-400 font-bold uppercase tracking-wider">Mortgages & Loans</span>
-            <Percent className="h-4.5 w-4.5 text-orange-400" />
+            <span className="text-[9px] text-gray-400 font-extrabold uppercase tracking-wider">Mortgages & Loans</span>
+            <div className="p-1.5 rounded-lg bg-amber-500/10 text-amber-400 border border-amber-500/15 group-hover:bg-amber-500/20 group-hover:text-amber-300 transition-colors">
+              <Percent className="h-4.5 w-4.5" />
+            </div>
           </div>
           <div>
-            <h3 className="text-lg font-bold tracking-tight text-orange-400">
+            <h3 className="text-xl font-black tracking-tight text-amber-400 drop-shadow-[0_0_8px_rgba(245,158,11,0.15)]">
               ${totalLoanBalance.toLocaleString('en-US', { minimumFractionDigits: 2 })}
             </h3>
-            <p className="text-[8px] text-gray-550">Valon Mortgage, TD, RC Willey</p>
+            <p className="text-[8px] text-gray-550 font-medium">Valon Mortgage, TD, RC Willey</p>
           </div>
         </div>
 
         {/* Net Worth */}
-        <div className="glass-panel p-3.5 rounded-2xl flex flex-col justify-between space-y-2 bg-slate-950/10 border-gray-900">
+        <div className="group relative overflow-hidden glass-panel p-4 rounded-2xl flex flex-col justify-between space-y-3 bg-gradient-to-br from-slate-950/40 via-slate-950/20 to-slate-900/10 border-l-4 border-l-sky-500 border-gray-900/80 hover:border-gray-800 transition-all duration-300 hover:translate-y-[-2px] hover:shadow-[0_4px_25px_rgba(14,165,233,0.06)]">
           <div className="flex items-center justify-between">
-            <span className="text-[10px] text-gray-400 font-bold uppercase tracking-wider">Liquid Net Worth</span>
-            <TrendingUp className="h-4.5 w-4.5 text-blue-400" />
+            <span className="text-[9px] text-gray-400 font-extrabold uppercase tracking-wider">Liquid Net Worth</span>
+            <div className="p-1.5 rounded-lg bg-sky-500/10 text-sky-400 border border-sky-500/15 group-hover:bg-sky-500/20 group-hover:text-sky-300 transition-colors">
+              <TrendingUp className="h-4.5 w-4.5" />
+            </div>
           </div>
           <div>
-            <h3 className="text-lg font-bold tracking-tight text-blue-400">
+            <h3 className="text-xl font-black tracking-tight text-sky-400 drop-shadow-[0_0_8px_rgba(14,165,233,0.15)]">
               ${trueNetWorth.toLocaleString('en-US', { minimumFractionDigits: 2 })}
             </h3>
-            <p className="text-[8px] text-gray-550">Cash minus Card & Loan debts</p>
+            <p className="text-[8px] text-gray-550 font-medium">Cash minus Card & Loan debts</p>
           </div>
         </div>
       </section>
@@ -286,13 +336,13 @@ export function DashboardContent({
         <div className="space-y-4">
           
           {/* Home, Utilities & Phone */}
-          <div className="glass-panel p-4 rounded-2xl space-y-3 bg-slate-950/10 flex flex-col">
-            <div className="flex items-center justify-between border-b border-gray-900 pb-2">
+          <div className="glass-panel p-4 rounded-3xl space-y-4 bg-slate-950/20 border border-white/5 shadow-2xl backdrop-blur-md hover:border-white/10 transition-all duration-300 flex flex-col">
+            <div className="flex items-center justify-between border-b border-gray-900/60 pb-2">
               <div className="flex items-center space-x-1.5">
                 <Home className="h-4.5 w-4.5 text-emerald-400" />
-                <h2 className="text-xs font-bold text-gray-100 uppercase tracking-wider">Home, Utilities & Phone</h2>
+                <h2 className="text-xs font-bold text-gray-105 uppercase tracking-wider">Home, Utilities & Phone</h2>
               </div>
-              <span className="text-[8px] bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 font-bold px-1.5 py-0.5 rounded uppercase">
+              <span className="text-[8px] bg-emerald-500/10 border border-emerald-500/20 text-emerald-450 font-black px-1.5 py-0.5 rounded uppercase">
                 Utility & Comms
               </span>
             </div>
@@ -390,13 +440,13 @@ export function DashboardContent({
           </div>
 
           {/* Subscriptions & Recurring Services */}
-          <div className="glass-panel p-4 rounded-2xl space-y-3 bg-slate-950/10 flex flex-col">
-            <div className="flex items-center justify-between border-b border-gray-900 pb-2">
+          <div className="glass-panel p-4 rounded-3xl space-y-4 bg-slate-950/20 border border-white/5 shadow-2xl backdrop-blur-md hover:border-white/10 transition-all duration-300 flex flex-col">
+            <div className="flex items-center justify-between border-b border-gray-900/60 pb-2">
               <div className="flex items-center space-x-1.5">
                 <Tv className="h-4.5 w-4.5 text-emerald-400" />
                 <h2 className="text-xs font-bold text-gray-100 uppercase tracking-wider">Subscriptions & Memberships</h2>
               </div>
-              <span className="text-[8px] bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 font-bold px-1.5 py-0.5 rounded uppercase">
+              <span className="text-[8px] bg-emerald-500/10 border border-emerald-500/20 text-emerald-450 font-black px-1.5 py-0.5 rounded uppercase">
                 Recurring
               </span>
             </div>
@@ -499,7 +549,7 @@ export function DashboardContent({
         <div className="space-y-4">
           
           {/* Amortizing Loans & Mortgages (Relocated to the Top!) */}
-          <div className="glass-panel p-4 rounded-2xl space-y-3 bg-slate-950/10 border border-emerald-500/20">
+          <div className="glass-panel p-4 rounded-3xl space-y-4 bg-slate-950/20 border border-emerald-500/10 shadow-2xl backdrop-blur-md hover:border-emerald-500/20 transition-all duration-300">
             <div className="flex items-center justify-between border-b border-gray-900 pb-2">
               <div className="flex items-center space-x-1.5">
                 <Percent className="h-4.5 w-4.5 text-emerald-400" />
@@ -562,17 +612,17 @@ export function DashboardContent({
                 return (
                   <div
                     key={plan.id}
-                    className={`p-3 bg-gray-950/40 border border-gray-900/60 rounded-xl space-y-1.5 hover:border-gray-800 transition-colors ${
+                    className={`p-3.5 bg-slate-950/40 border border-white/5 rounded-2xl space-y-2 hover:border-emerald-500/30 hover:bg-slate-950/60 transition-all duration-300 shadow-md ${
                       is401k ? 'border-yellow-500/10 bg-yellow-500/2' : ''
                     }`}
                   >
                     <div className="flex items-start justify-between">
                       <div>
-                        <h3 className="font-bold text-gray-200 leading-tight">{plan.name}</h3>
-                        <p className="text-[8px] text-gray-555 capitalize">
+                        <h3 className="font-bold text-gray-150 leading-tight">{plan.name}</h3>
+                        <p className="text-[8px] text-gray-500 capitalize">
                           {plan.provider} • {rate}
                           {plan.next_due_date && (
-                            <span className="text-emerald-400 font-semibold ml-1.5 border-l border-gray-800/80 pl-1.5">
+                            <span className="text-emerald-400 font-bold ml-1.5 border-l border-gray-800/80 pl-1.5">
                               Due {new Date(plan.next_due_date + 'T00:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
                             </span>
                           )}
@@ -582,30 +632,30 @@ export function DashboardContent({
                         <p className="font-bold text-gray-200">
                           {is401k ? 'Payroll' : `$${Number(plan.regular_payment_amount).toFixed(2)}`}
                         </p>
-                        <span className="text-[7px] text-gray-500 block uppercase font-semibold">Monthly</span>
+                        <span className="text-[7px] text-gray-500 block uppercase font-bold">Monthly</span>
                       </div>
                     </div>
 
                     {/* Progress details */}
-                    <div className="grid grid-cols-2 gap-1 text-[9px] text-gray-400 border-t border-gray-900/40 pt-1.5">
+                    <div className="grid grid-cols-2 gap-1 text-[9px] text-gray-400 border-t border-gray-900/60 pt-1.5">
                       <div>
-                        <span className="text-gray-500">Remaining Balance:</span>
+                        <span className="text-gray-500 font-medium">Remaining Balance:</span>
                         <p className="font-bold text-gray-300">
                           {is401k ? 'Needs Review' : `$${Number(remainingPrincipal).toLocaleString('en-US', { minimumFractionDigits: 2 })}`}
                         </p>
                       </div>
                       <div className="text-right">
-                        <span className="text-gray-550">Payments:</span>
+                        <span className="text-gray-500 font-medium">Progress Ledger:</span>
                         <p className="font-bold text-gray-300">{completed}/{plan.total_scheduled_payments} mos</p>
                       </div>
                     </div>
 
                     {/* Progress Bar indicator */}
-                    <div className="space-y-1">
-                      <div className="w-full bg-gray-850 rounded-full h-1 overflow-hidden">
-                        <div className="bg-emerald-500 h-1 rounded-full" style={{ width: `${pct}%` }} />
+                    <div className="space-y-1 pt-0.5">
+                      <div className="w-full bg-gray-900 rounded-full h-1.5 overflow-hidden border border-white/5">
+                        <div className="bg-gradient-to-r from-emerald-500 to-teal-400 h-1.5 rounded-full shadow-[0_0_8px_rgba(52,211,153,0.35)]" style={{ width: `${pct}%` }} />
                       </div>
-                      <div className="flex justify-between text-[8px] text-gray-550">
+                      <div className="flex justify-between text-[8px] text-gray-550 font-bold">
                         <span>{pct}% paid off</span>
                         <span>Paid From: {paidFrom}</span>
                       </div>
@@ -623,10 +673,10 @@ export function DashboardContent({
         {/* ================= COLUMN 3: CREDIT CARD STATEMENTS ================= */}
         <div className="space-y-4">
           
-          <div className="glass-panel p-4 rounded-2xl space-y-3 bg-slate-950/10 h-full flex flex-col">
-            <div className="flex items-center space-x-1.5">
-              <CreditCard className="h-4.5 w-4.5 text-emerald-400" />
-              <h2 className="text-xs font-bold text-gray-100 uppercase tracking-wider">Credit Card Statement Payments</h2>
+          <div className="glass-panel p-4 rounded-3xl space-y-4 bg-slate-950/20 border border-white/5 shadow-2xl backdrop-blur-md hover:border-white/10 transition-all duration-300 h-full flex flex-col">
+            <div className="flex items-center space-x-1.5 border-b border-gray-900/60 pb-2">
+              <CreditCard className="h-4.5 w-4.5 text-emerald-450" />
+              <h2 className="text-xs font-bold text-gray-105 uppercase tracking-wider">Credit Card Statement Payments</h2>
             </div>
 
             <div className="overflow-x-auto flex-1">

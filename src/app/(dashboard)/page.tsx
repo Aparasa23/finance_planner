@@ -98,7 +98,7 @@ export default async function DashboardPage() {
   const paidBills = (billOccurrences || []).filter((o: any) => o.status === 'paid')
   const reviewBills = (billOccurrences || []).filter((o: any) => o.status === 'needs_review')
 
-  // Map credit card statement details
+  // Map credit card statement details and sort by current balance due descending
   const cardsWithStatement = creditCards.map((card: any) => {
     const details = (creditCardDetails || []).find((d: any) => d.account_id === card.id)
     const utilization = card.credit_limit > 0 ? Math.round((card.current_balance / card.credit_limit) * 100) : 0
@@ -111,7 +111,12 @@ export default async function DashboardPage() {
       notes: details?.notes ?? '',
       utilization,
     }
-  })
+  }).sort((a: any, b: any) => Number(b.current_balance) - Number(a.current_balance))
+
+  // Sort loans/installment plans by regular payment amount descending
+  const sortedInstallmentPlans = [...(installmentPlans || [])].sort(
+    (a: any, b: any) => Number(b.regular_payment_amount) - Number(a.regular_payment_amount)
+  )
 
   // Sync health checks
   const { data: activeConnections = [] } = await supabase
@@ -157,7 +162,7 @@ export default async function DashboardPage() {
       reviewBills={reviewBills}
       paidBills={paidBills}
       cardsWithStatement={cardsWithStatement}
-      installmentPlans={installmentPlans}
+      installmentPlans={sortedInstallmentPlans}
       transactions={transactions}
       unconfirmedStreams={unconfirmedStreams || []}
     />
