@@ -63,7 +63,8 @@ export async function matchTransactionToBill(transactionId: string): Promise<{ m
   const merchantLower = txMerchant.toLowerCase()
   if (
     (merchantLower.includes('apple card') && (merchantLower.includes('pmt') || merchantLower.includes('payment') || merchantLower.includes('bill'))) ||
-    (merchantLower.includes('goldman sachs') && merchantLower.includes('apple'))
+    (merchantLower.includes('goldman sachs')) ||
+    (merchantLower.includes('gs bank'))
   ) {
     const { data: appleAccount } = await adminSupabase
       .from('financial_accounts')
