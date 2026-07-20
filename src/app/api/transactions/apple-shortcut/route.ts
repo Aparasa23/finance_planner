@@ -90,7 +90,9 @@ export async function POST(request: Request) {
       await checkForPotentialSubscription(transaction.id)
     }
 
-    // 6. Update Apple Card current balance ledger by adding the transaction amount
+    // 6. Update Apple Card current balance ledger
+    // If the Shortcut sends the live balance, overwrite the ledger with the real value.
+    // Otherwise, fall back to adding the transaction amount.
     const { data: currentAcc } = await adminSupabase
       .from('financial_accounts')
       .select('current_balance')
@@ -98,7 +100,9 @@ export async function POST(request: Request) {
       .single()
 
     if (currentAcc) {
-      const newBal = (currentAcc.current_balance || 0) + txAmount
+      const realBalance = body.balance ? parseFloat(body.balance) : null
+      const newBal = realBalance !== null ? realBalance : (currentAcc.current_balance || 0) + txAmount
+      
       await adminSupabase
         .from('financial_accounts')
         .update({ current_balance: newBal })
