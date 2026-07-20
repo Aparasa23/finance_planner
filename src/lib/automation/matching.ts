@@ -61,11 +61,11 @@ export async function matchTransactionToBill(transactionId: string): Promise<{ m
 
   // Special Rule: Auto-detect Apple Card bill payments from checking to reduce Apple Card manual balance
   const merchantLower = txMerchant.toLowerCase()
-  if (
-    (merchantLower.includes('apple card') && (merchantLower.includes('pmt') || merchantLower.includes('payment') || merchantLower.includes('bill'))) ||
-    (merchantLower.includes('goldman sachs')) ||
-    (merchantLower.includes('gs bank'))
-  ) {
+  const isAppleCard = merchantLower.includes('apple card') || merchantLower.includes('applecard')
+  const isGS = merchantLower.includes('goldman sachs') || merchantLower.includes('gs bank') || merchantLower.includes('gsbank')
+  const isPmt = merchantLower.includes('pmt') || merchantLower.includes('payment') || merchantLower.includes('bill')
+
+  if ((isAppleCard && isPmt) || isGS) {
     const { data: appleAccount } = await adminSupabase
       .from('financial_accounts')
       .select('id, current_balance')
