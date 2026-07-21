@@ -14,13 +14,13 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Finance OS",
+  title: "Canopy Personal Finance",
   description: "Secure, automated, intelligent household personal finance operating system.",
   manifest: "/manifest.json",
   appleWebApp: {
     capable: true,
     statusBarStyle: "black-translucent",
-    title: "Finance OS",
+    title: "Canopy",
   },
 };
 

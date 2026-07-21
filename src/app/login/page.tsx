@@ -36,11 +36,11 @@ export default function LoginPage() {
 
         <div className="flex flex-col items-center text-center space-y-3">
           <div className="h-10 w-10 rounded-xl bg-gradient-to-tr from-emerald-500 to-teal-400 flex items-center justify-center shadow-lg shadow-emerald-500/20">
-            <span className="text-base font-bold text-emerald-950">F</span>
+            <span className="text-base font-bold text-emerald-950">C</span>
           </div>
           <div>
             <h2 className="text-2xl font-bold tracking-tight bg-gradient-to-r from-white to-gray-400 bg-clip-text text-transparent">
-              Welcome to Finance OS
+              Welcome to Canopy
             </h2>
             <p className="text-xs text-gray-400 mt-1">Private household ledger authentication</p>
           </div>

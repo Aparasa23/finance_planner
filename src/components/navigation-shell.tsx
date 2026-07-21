@@ -56,11 +56,11 @@ export function NavigationShell({ children, userEmail, userName }: NavigationShe
           {/* Logo / Title */}
           <div className="flex items-center space-x-2 px-2 py-3">
             <div className="h-8 w-8 rounded-lg bg-gradient-to-tr from-emerald-500 to-teal-400 flex items-center justify-center shadow-lg shadow-emerald-500/20">
-              <span className="text-sm font-bold text-emerald-950">F</span>
+              <span className="text-sm font-bold text-emerald-950">C</span>
             </div>
             <div>
               <h1 className="font-bold text-lg leading-none bg-gradient-to-r from-white to-gray-400 bg-clip-text text-transparent">
-                Finance OS
+                Canopy
               </h1>
               <span className="text-[10px] text-emerald-400 font-medium tracking-wide">PRIVATE HOUSEHOLD</span>
             </div>
@@ -125,10 +125,10 @@ export function NavigationShell({ children, userEmail, userName }: NavigationShe
         <header className="flex h-14 items-center justify-between px-4 glass-panel border-b border-gray-800/60 z-10 shrink-0">
           <div className="flex items-center md:hidden space-x-2">
             <div className="h-7 w-7 rounded bg-gradient-to-tr from-emerald-500 to-teal-400 flex items-center justify-center shadow-md">
-              <span className="text-[10px] font-bold text-emerald-950">F</span>
+              <span className="text-[10px] font-bold text-emerald-950">C</span>
             </div>
             <span className="font-bold text-sm bg-gradient-to-r from-white to-gray-400 bg-clip-text text-transparent">
-              Finance OS
+              Canopy
             </span>
           </div>
 

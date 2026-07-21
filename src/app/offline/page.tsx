@@ -15,7 +15,7 @@ export default function OfflinePage() {
             Connection Lost
           </h1>
           <p className="text-sm text-gray-400">
-            Finance OS is currently offline. Some features require an active internet connection to contact financial institutions and secure server endpoints.
+            Canopy is currently offline. Some features require an active internet connection to contact financial institutions and secure server endpoints.
           </p>
         </div>
 
