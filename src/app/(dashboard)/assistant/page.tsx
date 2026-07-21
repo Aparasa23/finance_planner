@@ -14,7 +14,7 @@ export default function AssistantPage() {
   const [messages, setMessages] = useState<Message[]>([
     {
       sender: 'assistant',
-      text: "Hello! I am your **Canopy Assistant**. I can help you summarize accounts, review upcoming bills, track savings targets, or run spending analytics for your household. What would you like to explore today?",
+      text: "Hello! I am your **Canvora Assistant**. I can help you summarize accounts, review upcoming bills, track savings targets, or run spending analytics for your household. What would you like to explore today?",
     },
   ])
   const [inputText, setInputText] = useState('')

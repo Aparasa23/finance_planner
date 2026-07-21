@@ -42,7 +42,7 @@ export class PlaidProvider implements FinancialProvider {
         user: {
           client_user_id: userId,
         },
-        client_name: 'Canopy',
+        client_name: 'Canvora',
         products,
         country_codes: (process.env.PLAID_COUNTRY_CODES?.split(',').map((c) => c.trim()) || ['US']) as CountryCode[],
         language: 'en',
@@ -63,7 +63,7 @@ export class PlaidProvider implements FinancialProvider {
             user: {
               client_user_id: userId,
             },
-            client_name: 'Canopy',
+            client_name: 'Canvora',
             products: fallbackProducts,
             country_codes: (process.env.PLAID_COUNTRY_CODES?.split(',') || ['US']) as CountryCode[],
             language: 'en',

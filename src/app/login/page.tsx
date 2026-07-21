@@ -40,7 +40,7 @@ export default function LoginPage() {
           </div>
           <div>
             <h2 className="text-2xl font-bold tracking-tight bg-gradient-to-r from-white to-gray-400 bg-clip-text text-transparent">
-              Welcome to Canopy
+              Welcome to Canvora
             </h2>
             <p className="text-xs text-gray-400 mt-1">Private household ledger authentication</p>
           </div>
@@ -109,7 +109,7 @@ export default function LoginPage() {
 
         <div className="text-center pt-4 border-t border-gray-800/40">
           <p className="text-[10px] text-gray-600 font-medium tracking-wide">
-            © {new Date().getFullYear()} Canopy Personal Finance™. All rights reserved.
+            © {new Date().getFullYear()} Canvora Personal Finance™. All rights reserved.
           </p>
         </div>
       </div>

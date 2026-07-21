@@ -60,7 +60,7 @@ export function NavigationShell({ children, userEmail, userName }: NavigationShe
             </div>
             <div>
               <h1 className="font-bold text-lg leading-none bg-gradient-to-r from-white to-gray-400 bg-clip-text text-transparent">
-                Canopy
+                Canvora
               </h1>
               <span className="text-[10px] text-emerald-400 font-medium tracking-wide">PRIVATE HOUSEHOLD</span>
             </div>
@@ -118,7 +118,7 @@ export function NavigationShell({ children, userEmail, userName }: NavigationShe
           </button>
 
           <div className="pt-2 text-center text-[9px] text-gray-600 tracking-wide border-t border-gray-800/40">
-            © {new Date().getFullYear()} Canopy Personal Finance™
+            © {new Date().getFullYear()} Canvora Personal Finance™
           </div>
         </div>
       </aside>
@@ -132,7 +132,7 @@ export function NavigationShell({ children, userEmail, userName }: NavigationShe
               <span className="text-[10px] font-bold text-emerald-950">C</span>
             </div>
             <span className="font-bold text-sm bg-gradient-to-r from-white to-gray-400 bg-clip-text text-transparent">
-              Canopy
+              Canvora
             </span>
           </div>
 

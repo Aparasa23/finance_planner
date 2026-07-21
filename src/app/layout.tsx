@@ -14,13 +14,13 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Canopy Personal Finance",
+  title: "Canvora Personal Finance",
   description: "Secure, automated, intelligent household personal finance operating system.",
   manifest: "/manifest.json",
   appleWebApp: {
     capable: true,
     statusBarStyle: "black-translucent",
-    title: "Canopy",
+    title: "Canvora",
   },
 };
 
