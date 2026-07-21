@@ -116,6 +116,10 @@ export function NavigationShell({ children, userEmail, userName }: NavigationShe
             )}
             <span>Sign Out</span>
           </button>
+
+          <div className="pt-2 text-center text-[9px] text-gray-600 tracking-wide border-t border-gray-800/40">
+            © {new Date().getFullYear()} Canopy Personal Finance™
+          </div>
         </div>
       </aside>
 

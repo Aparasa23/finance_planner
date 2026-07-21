@@ -120,6 +120,12 @@ export default function RegisterPage() {
             </Link>
           </p>
         </div>
+
+        <div className="text-center pt-4 border-t border-gray-800/40">
+          <p className="text-[10px] text-gray-600 font-medium tracking-wide">
+            © {new Date().getFullYear()} Canopy Personal Finance™. All rights reserved.
+          </p>
+        </div>
       </div>
     </div>
   )
