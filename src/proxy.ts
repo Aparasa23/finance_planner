@@ -14,7 +14,8 @@ export default async function proxy(request: NextRequest) {
     pathname.startsWith('/icons') ||
     pathname === '/manifest.json' ||
     pathname === '/sw.js' ||
-    pathname.startsWith('/api/webhooks')
+    pathname.startsWith('/api/webhooks') ||
+    pathname.startsWith('/api/cron')
   ) {
     return supabaseResponse
   }
