@@ -1,4 +1,5 @@
 import { createServerClient } from '@supabase/ssr'
+import { createClient as createSupabaseClient } from '@supabase/supabase-js'
 import { cookies } from 'next/headers'
 import { Database } from '@/types/database.types'
 import { createMockSupabaseClient } from './mock'
@@ -38,8 +39,8 @@ export async function createClient() {
 }
 
 /**
- * Service Role Client for secure operations (webhooks, assistant database tools)
- * that run outside the client's direct query privilege boundaries.
+ * Service Role Client for secure admin operations (webhooks, background crons, assistant database tools)
+ * that run outside client user boundaries and bypass RLS cleanly.
  */
 export function createAdminClient() {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL
@@ -49,16 +50,10 @@ export function createAdminClient() {
     return createMockSupabaseClient()
   }
 
-  return createServerClient<Database>(
-    url,
-    key,
-    {
-      cookies: {
-        getAll() {
-          return []
-        },
-        setAll() {},
-      },
-    }
-  ) as any
+  return createSupabaseClient<Database>(url, key, {
+    auth: {
+      persistSession: false,
+      autoRefreshToken: false,
+    },
+  }) as any
 }
