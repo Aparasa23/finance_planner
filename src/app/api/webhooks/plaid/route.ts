@@ -62,11 +62,9 @@ export async function POST(request: Request) {
 
   // 3. Act based on the Plaid webhook codes
   try {
-    if (webhookType === 'TRANSACTIONS') {
-      if (webhookCode === 'SYNC_UPDATES_AVAILABLE' || webhookCode === 'INITIAL_UPDATE' || webhookCode === 'DEFAULT_UPDATE') {
-        // Run sync asynchronously so we reply to Plaid immediately (Plaid webhooks expect quick responses)
-        // Next.js 'after' function or simple async invocation is ideal.
-        // We'll run it in the background
+    if (webhookType === 'TRANSACTIONS' || webhookType === 'LIABILITIES' || webhookType === 'HOLDINGS') {
+      if (webhookCode === 'SYNC_UPDATES_AVAILABLE' || webhookCode === 'INITIAL_UPDATE' || webhookCode === 'DEFAULT_UPDATE' || webhookCode === 'LIABILITIES_DEFAULT_UPDATE') {
+        // Run sync asynchronously so we reply to Plaid immediately
         syncHouseholdConnection(connection.id).then((result) => {
           adminSupabase
             .from('webhook_events')
@@ -81,7 +79,7 @@ export async function POST(request: Request) {
       } else {
         await adminSupabase
           .from('webhook_events')
-          .update({ status: 'ignored', error_details: `Unhandled transaction code: ${webhookCode}` })
+          .update({ status: 'ignored', error_details: `Unhandled code for ${webhookType}: ${webhookCode}` })
           .eq('id', eventLog.id)
       }
     } else if (webhookType === 'ITEM') {

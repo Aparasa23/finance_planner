@@ -198,7 +198,50 @@ export async function syncHouseholdConnection(connectionId: string): Promise<{ s
         .in('external_id', syncResult.removed)
     }
 
-    // 4. Update sync cursor and connection state
+    // 4. Sync Liabilities (Statement balances, Due dates, Minimum payments)
+    try {
+      const liabilities = await provider.syncLiabilities(accessToken)
+
+      if (liabilities.creditCards.length > 0) {
+        for (const card of liabilities.creditCards) {
+          const internalAccountId = accountMap.get(card.accountId)
+          if (internalAccountId) {
+            if (card.dueDate) {
+              const dueDay = new Date(card.dueDate).getDate()
+              await adminSupabase
+                .from('bills')
+                .update({
+                  expected_amount: card.statementBalance || card.minimumPayment,
+                  due_date_day: dueDay,
+                  updated_at: new Date().toISOString(),
+                })
+                .eq('account_id', internalAccountId)
+            }
+          }
+        }
+      }
+
+      if (liabilities.loans.length > 0) {
+        for (const loan of liabilities.loans) {
+          const internalAccountId = accountMap.get(loan.accountId)
+          if (internalAccountId && loan.nextPaymentDate) {
+            const dueDay = new Date(loan.nextPaymentDate).getDate()
+            await adminSupabase
+              .from('bills')
+              .update({
+                expected_amount: loan.nextPaymentAmount || loan.outstandingBalance,
+                due_date_day: dueDay,
+                updated_at: new Date().toISOString(),
+              })
+              .eq('account_id', internalAccountId)
+          }
+        }
+      }
+    } catch (liabErr: any) {
+      console.log(`Liabilities sync skipped for connection ${connectionId}:`, liabErr.message || liabErr)
+    }
+
+    // 5. Update sync cursor and connection state
     await adminSupabase
       .from('financial_connections')
       .update({
