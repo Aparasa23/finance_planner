@@ -257,3 +257,122 @@ Return ONLY a JSON object:
     }
   }
 }
+
+export async function analyzeTransactionDispute(params: {
+  merchantName: string
+  amount: number
+  date: string
+  category: string
+  disputeReason: string
+  userNotes?: string
+}): Promise<{
+  merchantName: string
+  strategySummary: string
+  legalPolicyLeverage: string[]
+  phoneScript: {
+    opening: string
+    keyPoints: string[]
+    escalationIfDenied: string
+  }
+  emailDraft: string
+  bankDisputeReasonCode: string
+  bankDisputeLetter: string
+}> {
+  const { merchantName, amount, date, category, disputeReason, userNotes } = params
+
+  const apiKey = process.env.GEMINI_API_KEY
+  if (!apiKey || apiKey === 'your-gemini-api-key') {
+    return {
+      merchantName,
+      strategySummary: `Offline Sandbox Negotiation Plan for ${merchantName} ($${amount.toFixed(2)}).`,
+      legalPolicyLeverage: [
+        'FTC Unfair and Deceptive Practices Rule (16 CFR Part 425)',
+        'Visa Chargeback Reason Code 13.1 (Services Not Provided)',
+        'Merchant 30-Day Consumer Satisfaction Guarantee Policy',
+      ],
+      phoneScript: {
+        opening: `Hello, I am calling regarding my recent charge of $${amount.toFixed(2)} from ${merchantName} on ${date}. I am requesting a full refund as I have not utilized this service.`,
+        keyPoints: [
+          'State clearly that account logs confirm 0 usage over the billing period.',
+          'Reference the initial agreement terms regarding unfulfilled service or satisfaction guarantees.',
+          'Request a supervisor or retention department if representative states "policy prevents refunds".',
+        ],
+        escalationIfDenied: `If you are unable to issue a refund, please transfer me to your retention manager or billing supervisor, as I will need to file a formal dispute with my card issuer under Reason Code 13.1.`,
+      },
+      emailDraft: `Subject: Formal Refund & Account Settlement Request - ${merchantName} ($${amount.toFixed(2)})\n\nDear Customer Support,\n\nI am writing to request a full refund of $${amount.toFixed(2)} charged on ${date} for ${merchantName}.\n\nReason: ${disputeReason}. ${userNotes ? `Additional Context: ${userNotes}` : ''}\n\nOur account records indicate zero utilization during this billing period. Under consumer protection guidelines and your service terms, I request this charge be refunded to my original payment method.\n\nThank you,\nAccount Support Advocate`,
+      bankDisputeReasonCode: 'Visa 13.1 / Mastercard 4853 (Services Not Rendered)',
+      bankDisputeLetter: `I am disputing the transaction of $${amount.toFixed(2)} from ${merchantName} dated ${date}. I attempted to resolve this directly with the merchant, but the service was unused/unrendered. I request a credit to my account under credit card billing error rights.`,
+    }
+  }
+
+  try {
+    const genAI = new GoogleGenerativeAI(apiKey)
+    const model = genAI.getGenerativeModel({
+      model: 'gemini-3.1-flash-lite',
+      generationConfig: {
+        responseMimeType: 'application/json',
+      },
+    })
+
+    const prompt = `You are Canvora's Consumer Advocate AI. A user wants to dispute, request a refund, or negotiate a better deal for a transaction.
+Transaction Details:
+- Merchant Name: "${merchantName}"
+- Amount: $${amount.toFixed(2)}
+- Transaction Date: "${date}"
+- Category: "${category}"
+- User Dispute Goal: "${disputeReason}"
+- Additional Context/Notes: "${userNotes || 'None provided'}"
+
+Analyze the merchant's known refund policy, FTC consumer protection rules, card network chargeback reason codes (Visa/Mastercard), and high-persuasion negotiation tactics.
+
+Generate a JSON object response matching this exact structure:
+{
+  "merchantName": string,
+  "strategySummary": "A concise 2-sentence breakdown of the recommended strategy.",
+  "legalPolicyLeverage": ["array of 3 specific policy rules, terms, FTC rules, or contract clauses to quote"],
+  "phoneScript": {
+    "opening": "Exact opening sentence to say to phone support",
+    "keyPoints": ["3 firm bullet points to state during the call"],
+    "escalationIfDenied": "Exact script to say if representative says no or cites strict company policy"
+  },
+  "emailDraft": "Complete, professional email or chat transcript draft ready to send",
+  "bankDisputeReasonCode": "Official credit card chargeback code (e.g. Visa 13.1 / Mastercard 4853)",
+  "bankDisputeLetter": "Strict, formal letter text to submit to Chase / BofA / Apple Card if merchant refuses refund"
+}`
+
+    const response = await model.generateContent(prompt)
+    const text = response.response.text()
+    if (!text) throw new Error('Empty model response')
+
+    const parsed = JSON.parse(text)
+    return {
+      merchantName: parsed.merchantName || merchantName,
+      strategySummary: parsed.strategySummary || `AI Dispute Strategy for ${merchantName}.`,
+      legalPolicyLeverage: parsed.legalPolicyLeverage || ['FTC Billing Guidelines', 'Card Network Rights'],
+      phoneScript: parsed.phoneScript || {
+        opening: `Hello, I'm calling to request a refund for $${amount.toFixed(2)} from ${merchantName}.`,
+        keyPoints: ['Unused service', 'Request full refund'],
+        escalationIfDenied: 'Please transfer me to billing supervisor.',
+      },
+      emailDraft: parsed.emailDraft || `Requesting refund of $${amount.toFixed(2)} for ${merchantName}.`,
+      bankDisputeReasonCode: parsed.bankDisputeReasonCode || 'Visa 13.1 (Services Not Rendered)',
+      bankDisputeLetter: parsed.bankDisputeLetter || `Disputing transaction of $${amount.toFixed(2)} from ${merchantName}.`,
+    }
+  } catch (err: any) {
+    console.error('Error analyzing transaction dispute with Gemini:', err)
+    return {
+      merchantName,
+      strategySummary: `Standard Refund Request for ${merchantName} ($${amount.toFixed(2)}).`,
+      legalPolicyLeverage: ['Consumer Contract Rights', 'FTC Unfair Practices Standard'],
+      phoneScript: {
+        opening: `Hello, I am calling about the $${amount.toFixed(2)} charge on ${date}. I am requesting a refund as the service was not utilized.`,
+        keyPoints: ['Highlight zero usage', 'Request refund to original card'],
+        escalationIfDenied: 'I will escalate to my card issuer if unresolved.',
+      },
+      emailDraft: `Dear Support,\n\nPlease refund $${amount.toFixed(2)} for ${merchantName} dated ${date}.\n\nThank you.`,
+      bankDisputeReasonCode: 'Visa 13.1',
+      bankDisputeLetter: `Disputing $${amount.toFixed(2)} charge from ${merchantName}.`,
+    }
+  }
+}
+

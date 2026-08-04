@@ -24,6 +24,7 @@ import {
   MessageSquare,
   X
 } from 'lucide-react'
+import { TransactionDisputeModal } from './transaction-dispute-modal'
 
 interface DashboardContentProps {
   currentCash: number
@@ -60,6 +61,7 @@ export function DashboardContent({
 }: DashboardContentProps) {
   const [isMounted, setIsMounted] = useState(false)
   const [isConfirming, startConfirmTransition] = useTransition()
+  const [disputeTx, setDisputeTx] = useState<any>(null)
 
   React.useEffect(() => {
     setIsMounted(true)
@@ -380,6 +382,19 @@ export function DashboardContent({
                           </p>
                           <div className="mt-0.5">{statusBadge}</div>
                         </div>
+                        <button
+                          onClick={() => setDisputeTx({
+                            merchantName: occ.bill?.name || 'Bill',
+                            amount: occ.expected_amount,
+                            date: occ.due_date,
+                            category: occ.bill?.category,
+                          })}
+                          className="p-1.5 text-emerald-400 hover:text-emerald-300 hover:bg-emerald-500/10 rounded-lg border border-emerald-500/20 text-[8px] font-bold transition-all flex items-center space-x-1 shrink-0 h-7"
+                          title="🤖 AI Refund & Deal Advocate"
+                        >
+                          <Sparkles className="h-3 w-3" />
+                          <span>Advocate</span>
+                        </button>
                         {!isPaid && (
                           <button
                             onClick={() => handleConfirm(occ.id, occ.bill?.name)}
@@ -755,6 +770,13 @@ export function DashboardContent({
         </div>
 
       </div>
+
+      {/* AI Transaction Dispute & Refund Negotiation Advocate Modal */}
+      <TransactionDisputeModal
+        isOpen={!!disputeTx}
+        onClose={() => setDisputeTx(null)}
+        transaction={disputeTx}
+      />
 
     </div>
   )
