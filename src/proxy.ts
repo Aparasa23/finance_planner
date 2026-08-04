@@ -15,7 +15,7 @@ export default async function proxy(request: NextRequest) {
     pathname === '/manifest.json' ||
     pathname === '/sw.js' ||
     pathname.startsWith('/api/webhooks') ||
-    pathname.startsWith('/api/sync-all')
+    pathname.startsWith('/api/plaid')
   ) {
     return supabaseResponse
   }
