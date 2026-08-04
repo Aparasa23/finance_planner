@@ -1,7 +1,7 @@
 {
   "crons": [
     {
-      "path": "/api/cron/sync-all",
+      "path": "/api/sync-all",
       "schedule": "0 */4 * * *"
     }
   ]
