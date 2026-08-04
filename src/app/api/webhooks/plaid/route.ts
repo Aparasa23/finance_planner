@@ -2,6 +2,8 @@ import { NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/server'
 import { syncHouseholdConnection } from '@/lib/financial/sync'
 
+export const dynamic = 'force-dynamic'
+
 export async function POST(request: Request) {
   const adminSupabase = createAdminClient()
 

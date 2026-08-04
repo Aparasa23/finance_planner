@@ -2,6 +2,8 @@ import { NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/server'
 import { syncHouseholdConnection } from '@/lib/financial/sync'
 
+export const dynamic = 'force-dynamic'
+
 async function handleSyncAll(request: Request) {
   // Verify Vercel Cron header or authorization header if CRON_SECRET is set
   const authHeader = request.headers.get('authorization')
