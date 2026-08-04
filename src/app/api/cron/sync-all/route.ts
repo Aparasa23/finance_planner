@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/server'
 import { syncHouseholdConnection } from '@/lib/financial/sync'
 
-export async function GET(request: Request) {
+async function handleSyncAll(request: Request) {
   // Verify Vercel Cron header or authorization header if CRON_SECRET is set
   const authHeader = request.headers.get('authorization')
   const isVercelCron = request.headers.get('x-vercel-cron') === '1'
@@ -40,4 +40,12 @@ export async function GET(request: Request) {
     totalSynced: results.length,
     results,
   })
+}
+
+export async function GET(request: Request) {
+  return handleSyncAll(request)
+}
+
+export async function POST(request: Request) {
+  return handleSyncAll(request)
 }
