@@ -56,7 +56,11 @@ export default async function proxy(request: NextRequest) {
   }
 
   // Define protected pages
-  const isAuthPage = pathname === '/login' || pathname === '/register'
+  const isAuthPage =
+    pathname === '/login' ||
+    pathname === '/register' ||
+    pathname === '/forgot-password' ||
+    pathname === '/reset-password'
   const isPublicPage = isAuthPage || pathname.startsWith('/api/') || pathname === '/offline'
 
   // If not authenticated and trying to view dashboard/accounts/bills etc, redirect to login

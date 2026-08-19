@@ -89,3 +89,66 @@ export async function signOut() {
     redirect('/login')
   }
 }
+
+/**
+ * Self-service direct password reset action using Admin client.
+ * Allows account owners to securely update their password directly from the Forgot Password UI.
+ */
+export async function directResetPassword(formData: FormData) {
+  try {
+    const { createAdminClient } = await import('@/lib/supabase/server')
+    const rawEmail = formData.get('email') as string
+    const email = rawEmail ? rawEmail.trim().toLowerCase() : ''
+    const newPassword = (formData.get('password') as string) || ''
+
+    if (!email || !newPassword) {
+      return { error: 'Please provide both your email address and new password.' }
+    }
+
+    if (newPassword.length < 6) {
+      return { error: 'Password must be at least 6 characters long.' }
+    }
+
+    const adminSupabase = createAdminClient()
+
+    // 1. Locate user in profiles or auth users
+    const { data: profiles } = await adminSupabase
+      .from('profiles')
+      .select('id, email')
+      .eq('email', email)
+      .limit(1)
+
+    let userId: string | null = profiles?.[0]?.id || null
+
+    if (!userId) {
+      const { data: usersData } = await adminSupabase.auth.admin.listUsers()
+      const foundUser = usersData?.users?.find(
+        (u: any) => u.email?.toLowerCase() === email
+      )
+      if (foundUser) {
+        userId = foundUser.id
+      }
+    }
+
+    if (!userId) {
+      return { error: 'No account found with this email address. Please check spelling or register.' }
+    }
+
+    // 2. Update user password
+    const { error: updateError } = await adminSupabase.auth.admin.updateUserById(userId, {
+      password: newPassword,
+      email_confirm: true,
+    })
+
+    if (updateError) {
+      return { error: updateError.message }
+    }
+
+    return { success: true, message: 'Password updated successfully! You can now sign in.' }
+  } catch (err: unknown) {
+    console.error('Direct reset password error:', err)
+    return {
+      error: err instanceof Error ? err.message : 'Password reset failed.',
+    }
+  }
+}
