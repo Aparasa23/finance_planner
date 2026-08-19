@@ -3,6 +3,9 @@
 import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 
+/**
+ * Authenticates user credentials against Supabase Auth.
+ */
 export async function login(formData: FormData) {
   const rawEmail = formData.get('email') as string
   const email = rawEmail ? rawEmail.trim().toLowerCase() : ''
