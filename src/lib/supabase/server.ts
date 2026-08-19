@@ -12,12 +12,17 @@ export async function createClient() {
     return createMockSupabaseClient()
   }
 
+  const cleanUrl = url.trim().replace(/\/+$/, '')
+  const cleanKey = key.trim()
   const cookieStore = await cookies()
 
   return createServerClient<Database>(
-    url,
-    key,
+    cleanUrl,
+    cleanKey,
     {
+      global: {
+        fetch: (...args) => fetch(...args),
+      },
       cookies: {
         getAll() {
           return cookieStore.getAll()
@@ -50,10 +55,16 @@ export function createAdminClient() {
     return createMockSupabaseClient()
   }
 
-  return createSupabaseClient<Database>(url, key, {
+  const cleanUrl = url.trim().replace(/\/+$/, '')
+  const cleanKey = key.trim()
+
+  return createSupabaseClient<Database>(cleanUrl, cleanKey, {
     auth: {
       persistSession: false,
       autoRefreshToken: false,
+    },
+    global: {
+      fetch: (...args) => fetch(...args),
     },
   }) as any
 }
